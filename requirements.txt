@@ -1,0 +1,2 @@
+studentvue~=2.0.5
+zeep~=4.1.0
