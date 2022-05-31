@@ -71,8 +71,17 @@ def check_auth():
         return False
     with open('secret.conf', 'r') as f:
         auth_data = f.read()
-    auth_data = auth_data.split('\n')
-    auth_data = {k.strip(): v.strip() for k, v in (line.split(':') for line in auth_data if line.strip() != '')}
+    lines_auth_data = auth_data.split('\n')
+    auth_data = {}
+    for line in lines_auth_data:
+        if line.strip() == '':
+            continue
+        parts = line.split(':')
+        if len(parts) != 2:
+            # merge the second+ parts together, with colons
+            parts[1] = ':'.join(parts[1:])
+            parts = parts[:2]
+        auth_data[parts[0].strip()] = parts[1].strip()
     for v in auth_data.values():
         if '[' in v or ']' in v:
             logging.error('Please edit the secret.conf file with your username and password for StudentVue.')
@@ -192,10 +201,10 @@ typing.Dict[
             for assignment in value:
                 if type(assignment) == tuple:
                     assignment: typing.Tuple[Assignment, Assignment]
-                    output += f'    {assignment[0].assignment_id}: {assignment[0].score} -> {assignment[1].score}\n'
+                    output += f'    {assignment[0].name} ({assignment[0].assignment_id}): {assignment[0].score} -> {assignment[1].score}\n'
                 else:
                     assignment: Assignment
-                    output += f'    {assignment.assignment_id}: {assignment.score}\n'
+                    output += f'    {assignment.name} ({assignment.assignment_id}): {assignment.score}\n'
         output += f'New grade is {result["score"]["letter"]} ({result["score"]["percent"]}%)\n'
     return output
 
@@ -229,7 +238,7 @@ def main():
         outputs += '\n'
 
     if outputs.strip() != "":
-        builder = ""
+        builder = "```"
 
         def post_on_channel(built: str):
             logging.info('Posting on channel...')
@@ -245,9 +254,14 @@ def main():
         for line in outputs.splitlines():
             logging.info(line)
             if len(builder) + len(line) + 5 > 2000:
+                builder += "```"
                 post_on_channel(builder)
-                builder = ""
+                builder = "```"
             builder += line + "\n"
+        builder += "```"
+        post_on_channel(builder)
+    else:
+        logging.info('No changes found.')
 
 
 if __name__ == '__main__':

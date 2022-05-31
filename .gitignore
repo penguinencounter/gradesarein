@@ -1,3 +1,4 @@
 secret.conf
 __pycache__
 .idea
+sv_tracked_*
