@@ -209,6 +209,19 @@ typing.Dict[
     return output
 
 
+def grade_period_state(gp, start, end):
+    state = ""
+    if start >= datetime.now():
+        state = "Upcoming {}".format(start.strftime("%m/%d/%Y"))
+    elif end >= datetime.now():
+        state = "In Progress (end {})".format(end.strftime("%m/%d/%Y"))
+    else:
+        state = "Ended {}".format(end.strftime("%m/%d/%Y"))
+    
+    name = gp['@GradePeriod']
+    logging.info(f'{name} | {state}')
+
+
 def main():
     logging.basicConfig(format='[%(asctime)s] [%(levelname)s] %(message)s',
                         level=logging.DEBUG,
@@ -228,6 +241,7 @@ def main():
         e = rp['@EndDate']
         so = datetime.strptime(s, '%m/%d/%Y')
         eo = datetime.strptime(e, '%m/%d/%Y')
+        grade_period_state(rp, so, eo)
         if so <= datetime.now() <= eo:
             logging.info('Found active grade period: {} (id {})'.format(rp['@GradePeriod'], rp['@Index']))
             rps_to_track.append({k: v for k, v in rp.items()})
