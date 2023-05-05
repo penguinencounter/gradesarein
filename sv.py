@@ -108,6 +108,7 @@ def track_rp(sv: StudentVue, rp: dict):
     logging.info('Beginning tracking of grade period {} (id {})'.format(rp['@GradePeriod'], rp['@Index']))
     # get gradebook period
     gb = sv.get_gradebook(rp['@Index'])['Gradebook']['Courses']['Course']
+    rp_index = rp['@Index']
 
     def process_course(course: OrderedDict):
         result_data = {
@@ -121,7 +122,7 @@ def track_rp(sv: StudentVue, rp: dict):
         }
 
         course_name = course['@Title']
-        course_gen_id = hashlib.sha256(course_name.encode('utf-8')).hexdigest()
+        course_gen_id = hashlib.sha256(course_name.encode('utf-8')).hexdigest() + "_rp_" + str(rp_index)
         mark = course['Marks']['Mark']
         result_data["score"]["letter"] = mark['@CalculatedScoreString']
         result_data["score"]["percent"] = mark['@CalculatedScoreRaw']
@@ -156,13 +157,16 @@ def track_rp(sv: StudentVue, rp: dict):
                 for assignment in ct.assignments:
                     if isnew(assignment, previous.assignments):
                         result_data['new'].append(assignment)
+                        logging.debug(f"New assignment {assignment.name} provided by rp {rp_index}")
                     else:
                         previous_assignment = find(assignment, previous.assignments)
                         if assignment.score != previous_assignment.score:
                             result_data['updated'].append((previous_assignment, assignment))
+                            logging.debug(f"Updated assignment {assignment.name} provided by rp {rp_index}")
                 for assignment in previous.assignments:
                     if isnew(assignment, ct.assignments):
                         result_data['removed'].append(assignment)
+                        logging.debug(f"Removed assignment {assignment.name} provided by rp {rp_index}")
             else:
                 result_data['new'] = ct.assignments
         return result_data
